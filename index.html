@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dubbe Funzel | Handgefertigte 3D-Druck Lampen aus der Pfalz</title>
+    <meta name="description" content="Dubbe Funzel – Einzigartige 3D-gedruckte Lampen im Pfälzer Dubbenglas-Design. Stehlampe, Tischlampe & Deckenlampe.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.css" />
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-follower" id="cursor-follower"></div>
+
+    <!-- Grain Overlay -->
+    <div class="grain-overlay"></div>
+
+    <!-- Neon Edge Glow -->
+    <div class="edge-glow"></div>
+
+    <!-- Particle Canvas -->
+    <canvas id="particles"></canvas>
+
+    <!-- Background Hanging Lamps -->
+    <div class="bg-lamps-container">
+        <div class="bg-lamp bg-lamp-1">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-2">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-3">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-4">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-5">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-6">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+        <div class="bg-lamp bg-lamp-7">
+            <img src="assets/images/bg_lamp_custom.png" alt="" class="bg-lamp-img">
+            <div class="bg-lamp-color"></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="container nav-content">
+            <a href="#" class="logo" data-magnetic>
+                <span class="logo-text">Dubbe<span class="accent">Funzel</span></span>
+            </a>
+            <div class="nav-center">
+                <a href="#kollektion" class="nav-link" data-magnetic>Kollektion</a>
+                <a href="#ueber" class="nav-link" data-magnetic>Über uns</a>
+                <a href="#reviews" class="nav-link" data-magnetic>Reviews</a>
+                <a href="#faq" class="nav-link" data-magnetic>FAQ</a>
+            </div>
+            <a href="#kontakt" class="nav-cta" data-magnetic>Anfrage</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="hero">
+        <div class="hero-bg-lines"></div>
+        <div class="container hero-container">
+            <div class="hero-label">
+                <div class="label-line"></div>
+                <span>Pfälzer Handwerk trifft 3D-Druck</span>
+            </div>
+            <h1 class="hero-title" data-split-text>
+                <span class="line"><span class="line-inner">Licht neu</span></span>
+                <span class="line"><span class="line-inner">gedacht<span class="accent">.</span></span></span>
+            </h1>
+            <p class="hero-subtitle" data-reveal>Handgefertigte Leuchten im legendären Dubbenglas-Design – jede einzelne ein Unikat aus dem 3D-Drucker.</p>
+            <div class="hero-actions" data-reveal>
+                <a href="#kollektion" class="btn-primary" data-magnetic>
+                    <span>Kollektion entdecken</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="#kontakt" class="btn-ghost" data-magnetic>
+                    <span>Kontakt</span>
+                </a>
+            </div>
+            <!-- Hero image removed -->
+        </div>
+        <div class="scroll-indicator" data-reveal>
+            <div class="scroll-line"></div>
+            <span>Scroll</span>
+        </div>
+    </header>
+
+    <!-- Marquee Banner -->
+    <div class="marquee-section">
+        <div class="marquee-track">
+            <span class="marquee-item">Dubbe Funzel</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Handgefertigt</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">3D-Druck</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Pfälzer Design</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Unikate aus der Pfalz</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Dubbe Funzel</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Handgefertigt</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">3D-Druck</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Pfälzer Design</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Unikate aus der Pfalz</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Dubbe Funzel</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Handgefertigt</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">3D-Druck</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Pfälzer Design</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Unikate aus der Pfalz</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Dubbe Funzel</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Handgefertigt</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">3D-Druck</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Pfälzer Design</span>
+            <span class="marquee-separator">✦</span>
+            <span class="marquee-item">Unikate aus der Pfalz</span>
+            <span class="marquee-separator">✦</span>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <section id="kollektion" class="products-section">
+        <div class="container">
+            <div class="section-label" data-reveal>
+                <span class="label-num">01</span>
+                <span>Kollektion</span>
+            </div>
+            <h2 class="section-title" data-split-text>
+                <span class="line"><span class="line-inner">Drei Lampen.</span></span>
+                <span class="line"><span class="line-inner">Unendlich Licht<span class="accent">.</span></span></span>
+            </h2>
+        </div>
+        <div class="products-showcase">
+            <div class="product-item" data-reveal>
+                <a href="product.html?id=deckenlampe" class="product-link">
+                    <div class="product-img-container">
+                        <img src="assets/images/dubbe_deckenlampe.png" alt="Deckenlampe" class="product-img">
+                        <div class="product-img-overlay"></div>
+                    </div>
+                    <div class="product-meta">
+                        <div class="product-meta-left">
+                            <span class="product-category">Hängelampe</span>
+                            <h3 class="product-name">Deckenlampe</h3>
+                        </div>
+                        <div class="product-meta-right">
+                            <span class="product-price">50 €</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="product-item" data-reveal>
+                <a href="product.html?id=tischlampe" class="product-link">
+                    <div class="product-img-container">
+                        <img src="assets/images/dubbe_tischlampe.png" alt="Tischlampe" class="product-img">
+                        <div class="product-img-overlay"></div>
+                    </div>
+                    <div class="product-meta">
+                        <div class="product-meta-left">
+                            <span class="product-category">Tisch / Nachttisch</span>
+                            <h3 class="product-name">Tischlampe</h3>
+                        </div>
+                        <div class="product-meta-right">
+                            <span class="product-price">65 €</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="product-item" data-reveal>
+                <a href="product.html?id=stehlampe" class="product-link">
+                    <div class="product-img-container">
+                        <img src="assets/images/dubbe_stehlampe.png" alt="Stehlampe" class="product-img">
+                        <div class="product-img-overlay"></div>
+                    </div>
+                    <div class="product-meta">
+                        <div class="product-meta-left">
+                            <span class="product-category">Stehlampe</span>
+                            <h3 class="product-name">Stehlampe</h3>
+                        </div>
+                        <div class="product-meta-right">
+                            <span class="product-price">75 €</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About / Features Section -->
+    <section id="ueber" class="about-section">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-left">
+                    <div class="section-label" data-reveal>
+                        <span class="label-num">02</span>
+                        <span>Über uns</span>
+                    </div>
+                    <h2 class="section-title" data-split-text>
+                        <span class="line"><span class="line-inner">Tradition</span></span>
+                        <span class="line"><span class="line-inner">meets Tech<span class="accent">.</span></span></span>
+                    </h2>
+                    <p class="about-text" data-reveal>Jede Dubbe Funzel wird mit Leidenschaft in der Pfalz designt und Schicht für Schicht im 3D-Druckverfahren gefertigt. Das ikonische Dubbenglas-Muster sorgt für ein einzigartiges, warmes Lichtspiel in jedem Raum.</p>
+                </div>
+                <div class="about-right">
+                    <div class="stats-grid">
+                        <div class="stat-card" data-reveal>
+                            <span class="stat-number" data-count="100">0</span><span class="stat-suffix">%</span>
+                            <span class="stat-label">Handgefertigt</span>
+                        </div>
+                        <div class="stat-card" data-reveal>
+                            <span class="stat-number" data-count="3">0</span>
+                            <span class="stat-label">Modelle</span>
+                        </div>
+                        <div class="stat-card" data-reveal>
+                            <span class="stat-number" data-count="48">0</span><span class="stat-suffix">h</span>
+                            <span class="stat-label">Druckzeit / Lampe</span>
+                        </div>
+                        <div class="stat-card" data-reveal>
+                            <span class="stat-number" data-count="200">0</span><span class="stat-suffix">+</span>
+                            <span class="stat-label">Dubbe / Schirm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section id="reviews" class="reviews-section">
+        <div class="container">
+            <div class="section-label" data-reveal>
+                <span class="label-num">03</span>
+                <span>Kundenstimmen</span>
+            </div>
+            <h2 class="section-title" data-split-text>
+                <span class="line"><span class="line-inner">Was andere</span></span>
+                <span class="line"><span class="line-inner">sagen<span class="accent">.</span></span></span>
+            </h2>
+            <div class="reviews-grid">
+                <div class="review-card" data-reveal>
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"Die Stehlampe ist der absolute Hingucker in meinem Wohnzimmer. Tolles Licht, super Qualität."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">M</div>
+                        <div>
+                            <span class="review-name">Michael K.</span>
+                            <span class="review-product">Stehlampe</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card" data-reveal>
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"Die Tischlampe als Geschenk gekauft. Das Pfälzer Design kommt super an und die Lieferung war schnell."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">S</div>
+                        <div>
+                            <span class="review-name">Sarah L.</span>
+                            <span class="review-product">Tischlampe</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-card" data-reveal>
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"Wirklich saubere 3D-Druck-Arbeit. Keine störenden Rillen, ein wunderschönes warmes Licht."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">T</div>
+                        <div>
+                            <span class="review-name">Thomas R.</span>
+                            <span class="review-product">Deckenlampe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="faq-grid">
+                <div class="faq-left">
+                    <div class="section-label" data-reveal>
+                        <span class="label-num">04</span>
+                        <span>FAQ</span>
+                    </div>
+                    <h2 class="section-title" data-split-text>
+                        <span class="line"><span class="line-inner">Häufige</span></span>
+                        <span class="line"><span class="line-inner">Fragen<span class="accent">.</span></span></span>
+                    </h2>
+                </div>
+                <div class="faq-right">
+                    <div class="faq-item" data-reveal>
+                        <div class="faq-question">
+                            <span>Welches Leuchtmittel wird benötigt?</span>
+                            <div class="faq-icon"><span></span><span></span></div>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Wir empfehlen handelsübliche LED-Leuchtmittel (E27 Fassung) mit warmweißem Licht (ca. 2700K), um die Struktur der 'Dubbe' optimal in Szene zu setzen.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item" data-reveal>
+                        <div class="faq-question">
+                            <span>Ist das Material hitzebeständig?</span>
+                            <div class="faq-icon"><span></span><span></span></div>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Ja, wir drucken mit speziellen Filamenten (PETG/ABS), die absolut formstabil sind. Dennoch sollten ausschließlich LED-Leuchtmittel verwendet werden.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item" data-reveal>
+                        <div class="faq-question">
+                            <span>Gibt es individuelle Farbwünsche?</span>
+                            <div class="faq-icon"><span></span><span></span></div>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Aktuell bieten wir unsere Standardfarben an. Für spezielle Farbwünsche schreibt uns gerne über das Kontaktformular.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item" data-reveal>
+                        <div class="faq-question">
+                            <span>Wie lange dauert die Lieferung?</span>
+                            <div class="faq-icon"><span></span><span></span></div>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Da jede Lampe individuell gefertigt wird, beträgt die Lieferzeit ca. 5–10 Werktage nach Bestelleingang.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="kontakt" class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-left">
+                    <div class="section-label" data-reveal>
+                        <span class="label-num">05</span>
+                        <span>Kontakt</span>
+                    </div>
+                    <h2 class="section-title" data-split-text>
+                        <span class="line"><span class="line-inner">Let's</span></span>
+                        <span class="line"><span class="line-inner">talk<span class="accent">.</span></span></span>
+                    </h2>
+                    <p class="contact-text" data-reveal>Ob Bestellung, individuelle Anfrage oder einfach eine Frage – wir freuen uns von dir zu hören.</p>
+                </div>
+                <div class="contact-right">
+                    <form class="contact-form" id="contactForm" action="https://formspree.io/f/DEINE_FORM_ID" method="POST">
+                        <div class="form-field" data-reveal>
+                            <input type="text" id="name" name="name" required placeholder=" ">
+                            <label for="name">Name</label>
+                            <div class="field-line"></div>
+                        </div>
+                        <div class="form-field" data-reveal>
+                            <input type="email" id="email" name="_replyto" required placeholder=" ">
+                            <label for="email">E-Mail</label>
+                            <div class="field-line"></div>
+                        </div>
+                        <div class="form-field" data-reveal>
+                            <textarea id="message" name="message" rows="4" required placeholder=" "></textarea>
+                            <label for="message">Nachricht</label>
+                            <div class="field-line"></div>
+                        </div>
+                        <button type="submit" class="btn-primary btn-submit" data-magnetic data-reveal>
+                            <span>Nachricht senden</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <span class="logo-text footer-logo">Dubbe<span class="accent">Funzel</span></span>
+                    <p>Pfälzer Handwerk trifft 3D-Druck.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <span class="footer-heading">Shop</span>
+                        <a href="product.html?id=deckenlampe">Deckenlampe</a>
+                        <a href="product.html?id=tischlampe">Tischlampe</a>
+                        <a href="product.html?id=stehlampe">Stehlampe</a>
+                    </div>
+                    <div class="footer-col">
+                        <span class="footer-heading">Rechtliches</span>
+                        <a href="impressum.html">Impressum</a>
+                        <a href="datenschutz.html">Datenschutz</a>
+                        <a href="agb.html">AGB</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; 2026 Dubbe Funzel. Alle Rechte vorbehalten.</span>
+                <span class="footer-credit">Designed with ♥ in der Pfalz</span>
+            </div>
+        </div>
+    </footer>
+
+    <script async src="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.js"></script>
+    <div hidden id="snipcart" data-api-key="DEIN_SNIPCART_API_KEY"></div>
+    <script src="main.js"></script>
+</body>
+</html>

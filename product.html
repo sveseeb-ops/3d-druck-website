@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produktdetail | Dubbe Funzel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.css" />
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <canvas id="particles"></canvas>
+
+    <nav id="navbar" class="scrolled">
+        <div class="container nav-content">
+            <a href="index.html" class="logo" data-magnetic>
+                <span class="logo-text">Dubbe<span class="accent">Funzel</span></span>
+            </a>
+            <div class="nav-center">
+                <a href="index.html#kollektion" class="nav-link">Kollektion</a>
+                <a href="index.html#kontakt" class="nav-link">Kontakt</a>
+            </div>
+            <a href="index.html#kontakt" class="nav-cta" data-magnetic>Anfrage</a>
+        </div>
+    </nav>
+
+    <main class="product-page">
+        <div class="container">
+            <div class="back-link-container">
+                <a href="index.html#kollektion" class="back-link">← Zurück zur Übersicht</a>
+            </div>
+            <div class="product-detail-container" id="product-container">
+                <div class="loading-spinner">Lädt Produktdetails...</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; 2026 Dubbe Funzel. Alle Rechte vorbehalten.</span>
+                <span class="footer-credit">Designed with ♥ in der Pfalz</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="product.js"></script>
+    <script async src="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.js"></script>
+    <div hidden id="snipcart" data-api-key="DEIN_SNIPCART_API_KEY"></div>
+</body>
+</html>
