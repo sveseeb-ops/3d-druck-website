@@ -10,6 +10,122 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.css" />
+    <style>
+        /* ── SVG Lamp Placeholder ─────────────────────────────── */
+        .product-svg-fallback {
+            display: none;
+            width: 100%; height: 100%;
+            align-items: center; justify-content: center;
+            background: var(--bg-card);
+            position: absolute; inset: 0;
+        }
+
+        @keyframes lampCycle {
+            0%   { filter: drop-shadow(0 0 20px rgba(255,80,80,.9))  drop-shadow(0 0 50px rgba(255,80,80,.4)); }
+            14%  { filter: drop-shadow(0 0 20px rgba(255,160,30,.9)) drop-shadow(0 0 50px rgba(255,160,30,.4)); }
+            28%  { filter: drop-shadow(0 0 20px rgba(200,255,0,.9))  drop-shadow(0 0 50px rgba(200,255,0,.4)); }
+            42%  { filter: drop-shadow(0 0 20px rgba(0,220,80,.9))   drop-shadow(0 0 50px rgba(0,220,80,.4)); }
+            57%  { filter: drop-shadow(0 0 20px rgba(0,200,255,.9))  drop-shadow(0 0 50px rgba(0,200,255,.4)); }
+            71%  { filter: drop-shadow(0 0 20px rgba(80,80,255,.9))  drop-shadow(0 0 50px rgba(80,80,255,.4)); }
+            85%  { filter: drop-shadow(0 0 20px rgba(200,60,200,.9)) drop-shadow(0 0 50px rgba(200,60,200,.4)); }
+            100% { filter: drop-shadow(0 0 20px rgba(255,80,80,.9))  drop-shadow(0 0 50px rgba(255,80,80,.4)); }
+        }
+        @keyframes shadeColor {
+            0%   { fill: rgba(255,80,80,.12);  stroke: rgba(255,80,80,.7); }
+            14%  { fill: rgba(255,160,30,.12); stroke: rgba(255,160,30,.7); }
+            28%  { fill: rgba(200,255,0,.12);  stroke: rgba(200,255,0,.7); }
+            42%  { fill: rgba(0,220,80,.12);   stroke: rgba(0,220,80,.7); }
+            57%  { fill: rgba(0,200,255,.12);  stroke: rgba(0,200,255,.7); }
+            71%  { fill: rgba(80,80,255,.12);  stroke: rgba(80,80,255,.7); }
+            85%  { fill: rgba(200,60,200,.12); stroke: rgba(200,60,200,.7); }
+            100% { fill: rgba(255,80,80,.12);  stroke: rgba(255,80,80,.7); }
+        }
+        @keyframes dimpleColor {
+            0%   { fill: rgba(0,0,0,.3); stroke: rgba(255,80,80,.6); }
+            14%  { fill: rgba(0,0,0,.3); stroke: rgba(255,160,30,.6); }
+            28%  { fill: rgba(0,0,0,.3); stroke: rgba(200,255,0,.6); }
+            42%  { fill: rgba(0,0,0,.3); stroke: rgba(0,220,80,.6); }
+            57%  { fill: rgba(0,0,0,.3); stroke: rgba(0,200,255,.6); }
+            71%  { fill: rgba(0,0,0,.3); stroke: rgba(80,80,255,.6); }
+            85%  { fill: rgba(0,0,0,.3); stroke: rgba(200,60,200,.6); }
+            100% { fill: rgba(0,0,0,.3); stroke: rgba(255,80,80,.6); }
+        }
+        .lamp-svg-anim { animation: lampCycle 10s infinite; }
+        .shade-anim     { animation: shadeColor 10s infinite; stroke-width: 1.5; }
+        .dimple-anim    { animation: dimpleColor 10s infinite; stroke-width: 0.9; }
+
+        /* ── Kultur Section ───────────────────────────────────── */
+        .kultur-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 6rem; align-items: center;
+        }
+        .kultur-visual { display: flex; justify-content: center; }
+        .dubbeglas-svg {
+            opacity: .55;
+            filter: drop-shadow(0 0 30px rgba(200,165,88,.45));
+        }
+        .kultur-text .about-text { margin-top: 1.5rem; }
+        @media (max-width: 992px) {
+            .kultur-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .kultur-visual { order: -1; }
+        }
+
+        /* ── Farbwechsel Section ──────────────────────────────── */
+        .farben-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 6rem; align-items: center;
+        }
+        .farben-visual { display: flex; justify-content: center; }
+        .color-orbs {
+            display: flex; flex-wrap: wrap; gap: 14px; margin-top: 2rem;
+        }
+        .color-orb {
+            width: 44px; height: 44px; border-radius: 50%;
+            cursor: pointer;
+            transition: transform .25s, box-shadow .25s;
+            border: none; outline: none;
+        }
+        .color-orb:hover { transform: scale(1.28); }
+        @media (max-width: 992px) {
+            .farben-grid { grid-template-columns: 1fr; gap: 3rem; }
+        }
+
+        /* ── Nachhaltigkeit Section ───────────────────────────── */
+        .sustain-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 2rem; margin-top: 3.5rem;
+        }
+        .sustain-card {
+            padding: 2.2rem; border: 1px solid var(--border);
+            border-radius: var(--radius); background: var(--bg-card);
+            transition: all .4s var(--ease); position: relative; overflow: hidden;
+        }
+        .sustain-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--accent-dim); opacity: 0; transition: opacity .4s;
+        }
+        .sustain-card:hover { border-color: rgba(200,255,0,.25); transform: translateY(-5px); }
+        .sustain-card:hover::before { opacity: 1; }
+        .sustain-icon {
+            width: 46px; height: 46px; border-radius: 50%;
+            background: rgba(200,255,0,.08); border: 1px solid rgba(200,255,0,.2);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.4rem; position: relative; z-index: 1;
+        }
+        .sustain-icon svg { width: 22px; height: 22px; }
+        .sustain-title {
+            font-family: var(--font-display); font-size: 1.05rem;
+            font-weight: 600; color: var(--accent); margin-bottom: .7rem;
+            position: relative; z-index: 1;
+        }
+        .sustain-text {
+            color: var(--text-muted); font-size: .9rem;
+            line-height: 1.7; position: relative; z-index: 1;
+        }
+        @media (max-width: 992px) {
+            .sustain-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -65,8 +181,9 @@
             </a>
             <div class="nav-center">
                 <a href="#kollektion" class="nav-link" data-magnetic>Kollektion</a>
-                <a href="#ueber" class="nav-link" data-magnetic>Über uns</a>
-                <a href="#reviews" class="nav-link" data-magnetic>Reviews</a>
+                <a href="#kultur" class="nav-link" data-magnetic>Kultur</a>
+                <a href="#farben" class="nav-link" data-magnetic>Farbwechsel</a>
+                <a href="#nachhaltigkeit" class="nav-link" data-magnetic>Nachhaltig</a>
                 <a href="#faq" class="nav-link" data-magnetic>FAQ</a>
             </div>
             <a href="#kontakt" class="nav-cta" data-magnetic>Anfrage</a>
@@ -149,6 +266,50 @@
         </div>
     </div>
 
+    <!-- Kultur Section -->
+    <section id="kultur">
+        <div class="container">
+            <div class="kultur-grid">
+                <div>
+                    <div class="section-label" data-reveal>
+                        <span class="label-num">✦</span>
+                        <span>Pfälzer Tradition</span>
+                    </div>
+                    <h2 class="section-title" data-split-text>
+                        <span class="line"><span class="line-inner">Das Dubbeglas –</span></span>
+                        <span class="line"><span class="line-inner">mehr als Glas<span class="accent">.</span></span></span>
+                    </h2>
+                    <p class="about-text" data-reveal>Das Dubbeglas ist kein gewöhnliches Trinkglas – es ist ein Kulturgut der Pfalz. Mit seinen charakteristischen eingedrückten Kreisen, den „Dubbe", steht es wie kein anderes Objekt für pfälzische Gemütlichkeit und Weinkultur.</p>
+                    <p class="about-text" data-reveal style="margin-top:1rem;">Die Dubbe Funzel bringt diese ikonische Form als leuchtendes Designobjekt in dein Zuhause. Jeder Schirm entsteht Schicht für Schicht im 3D-Drucker – handgefertigt in der Pfalz.</p>
+                </div>
+                <div class="kultur-visual" data-reveal>
+                    <svg class="dubbeglas-svg" viewBox="0 0 160 230" width="220" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M38 18 L36 168 Q36 192 80 192 Q124 192 124 168 L122 18Z"
+                              fill="rgba(200,165,88,.07)" stroke="rgba(200,165,88,.55)" stroke-width="1.5"/>
+                        <ellipse cx="80" cy="18" rx="42" ry="9" fill="rgba(200,165,88,.1)" stroke="rgba(200,165,88,.4)" stroke-width="1"/>
+                        <ellipse cx="80" cy="186" rx="44" ry="9" fill="rgba(200,165,88,.1)" stroke="rgba(200,165,88,.3)" stroke-width="1"/>
+                        <rect x="74" y="192" width="12" height="22" fill="rgba(200,165,88,.3)" rx="2"/>
+                        <ellipse cx="80" cy="216" rx="26" ry="7" fill="rgba(200,165,88,.35)" stroke="rgba(200,165,88,.5)" stroke-width="1"/>
+                        <circle cx="57" cy="52"  r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="80" cy="52"  r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="103" cy="52" r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="46" cy="80"  r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="68" cy="80"  r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="92" cy="80"  r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="114" cy="80" r="11" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="53" cy="110"  r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="80" cy="110"  r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="107" cy="110" r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="46" cy="141"  r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="71" cy="141"  r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="96" cy="141"  r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                        <circle cx="115" cy="141" r="12" fill="rgba(0,0,0,.3)" stroke="rgba(200,165,88,.45)" stroke-width=".9"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Products Section -->
     <section id="kollektion" class="products-section">
         <div class="container">
@@ -165,7 +326,22 @@
             <div class="product-item" data-reveal>
                 <a href="product.html?id=deckenlampe" class="product-link">
                     <div class="product-img-container">
-                        <img src="assets/images/dubbe_deckenlampe.png" alt="Deckenlampe" class="product-img">
+                        <img src="assets/images/dubbe_deckenlampe.png" alt="Deckenlampe" class="product-img"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="product-svg-fallback">
+                            <svg class="lamp-svg-anim" viewBox="0 0 200 270" width="160" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="100" y1="0" x2="100" y2="32" stroke="rgba(255,255,255,.35)" stroke-width="1.8"/>
+                                <ellipse cx="100" cy="34" rx="17" ry="5" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.3)" stroke-width="1"/>
+                                <path d="M55 47 L49 238 Q49 252 100 252 Q151 252 151 238 L145 47Z" class="shade-anim"/>
+                                <ellipse cx="100" cy="49" rx="45" ry="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.3)" stroke-width=".9"/>
+                                <ellipse cx="100" cy="246" rx="53" ry="10" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.15)" stroke-width=".9"/>
+                                <circle cx="80"  cy="80"  r="11" class="dimple-anim"/><circle cx="100" cy="80"  r="11" class="dimple-anim"/><circle cx="120" cy="80"  r="11" class="dimple-anim"/>
+                                <circle cx="68"  cy="108" r="11" class="dimple-anim"/><circle cx="89"  cy="108" r="11" class="dimple-anim"/><circle cx="111" cy="108" r="11" class="dimple-anim"/><circle cx="132" cy="108" r="11" class="dimple-anim"/>
+                                <circle cx="74"  cy="137" r="12" class="dimple-anim"/><circle cx="100" cy="137" r="12" class="dimple-anim"/><circle cx="126" cy="137" r="12" class="dimple-anim"/>
+                                <circle cx="62"  cy="168" r="13" class="dimple-anim"/><circle cx="88"  cy="168" r="13" class="dimple-anim"/><circle cx="114" cy="168" r="13" class="dimple-anim"/><circle cx="139" cy="168" r="13" class="dimple-anim"/>
+                                <circle cx="74"  cy="203" r="13" class="dimple-anim"/><circle cx="100" cy="203" r="13" class="dimple-anim"/><circle cx="126" cy="203" r="13" class="dimple-anim"/>
+                            </svg>
+                        </div>
                         <div class="product-img-overlay"></div>
                     </div>
                     <div class="product-meta">
@@ -182,7 +358,21 @@
             <div class="product-item" data-reveal>
                 <a href="product.html?id=tischlampe" class="product-link">
                     <div class="product-img-container">
-                        <img src="assets/images/dubbe_tischlampe.png" alt="Tischlampe" class="product-img">
+                        <img src="assets/images/dubbe_tischlampe.png" alt="Tischlampe" class="product-img"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="product-svg-fallback">
+                            <svg class="lamp-svg-anim" viewBox="0 0 200 280" width="150" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M57 10 L53 148 Q53 161 100 161 Q147 161 147 148 L143 10Z" class="shade-anim"/>
+                                <ellipse cx="100" cy="12" rx="43" ry="8" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.38)" stroke-width="1"/>
+                                <ellipse cx="100" cy="156" rx="48" ry="9" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.18)" stroke-width=".9"/>
+                                <circle cx="80"  cy="38"  r="10" class="dimple-anim"/><circle cx="100" cy="38"  r="10" class="dimple-anim"/><circle cx="120" cy="38"  r="10" class="dimple-anim"/>
+                                <circle cx="69"  cy="64"  r="10" class="dimple-anim"/><circle cx="90"  cy="64"  r="10" class="dimple-anim"/><circle cx="111" cy="64"  r="10" class="dimple-anim"/><circle cx="131" cy="64"  r="10" class="dimple-anim"/>
+                                <circle cx="75"  cy="91"  r="11" class="dimple-anim"/><circle cx="100" cy="91"  r="11" class="dimple-anim"/><circle cx="125" cy="91"  r="11" class="dimple-anim"/>
+                                <circle cx="64"  cy="120" r="12" class="dimple-anim"/><circle cx="90"  cy="120" r="12" class="dimple-anim"/><circle cx="115" cy="120" r="12" class="dimple-anim"/><circle cx="138" cy="120" r="12" class="dimple-anim"/>
+                                <rect x="96" y="161" width="8" height="80" fill="rgba(90,70,40,.6)" rx="2"/>
+                                <ellipse cx="100" cy="245" rx="33" ry="10" fill="rgba(70,55,30,.65)" stroke="rgba(110,85,45,.45)" stroke-width="1"/>
+                            </svg>
+                        </div>
                         <div class="product-img-overlay"></div>
                     </div>
                     <div class="product-meta">
@@ -199,7 +389,22 @@
             <div class="product-item" data-reveal>
                 <a href="product.html?id=stehlampe" class="product-link">
                     <div class="product-img-container">
-                        <img src="assets/images/dubbe_stehlampe.png" alt="Stehlampe" class="product-img">
+                        <img src="assets/images/dubbe_stehlampe.png" alt="Stehlampe" class="product-img"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="product-svg-fallback">
+                            <svg class="lamp-svg-anim" viewBox="0 0 200 370" width="130" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M56 8 L50 162 Q50 176 100 176 Q150 176 150 162 L144 8Z" class="shade-anim"/>
+                                <ellipse cx="100" cy="10" rx="46" ry="9" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+                                <ellipse cx="100" cy="169" rx="52" ry="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.2)" stroke-width=".9"/>
+                                <circle cx="79"  cy="40"  r="11" class="dimple-anim"/><circle cx="100" cy="40"  r="11" class="dimple-anim"/><circle cx="121" cy="40"  r="11" class="dimple-anim"/>
+                                <circle cx="67"  cy="68"  r="11" class="dimple-anim"/><circle cx="89"  cy="68"  r="11" class="dimple-anim"/><circle cx="111" cy="68"  r="11" class="dimple-anim"/><circle cx="133" cy="68"  r="11" class="dimple-anim"/>
+                                <circle cx="74"  cy="97"  r="12" class="dimple-anim"/><circle cx="100" cy="97"  r="12" class="dimple-anim"/><circle cx="126" cy="97"  r="12" class="dimple-anim"/>
+                                <circle cx="62"  cy="128" r="13" class="dimple-anim"/><circle cx="88"  cy="128" r="13" class="dimple-anim"/><circle cx="114" cy="128" r="13" class="dimple-anim"/><circle cx="139" cy="128" r="13" class="dimple-anim"/>
+                                <rect x="96" y="176" width="8" height="165" fill="rgba(90,70,40,.6)" rx="2"/>
+                                <ellipse cx="100" cy="346" rx="40" ry="13" fill="rgba(70,55,30,.65)" stroke="rgba(110,85,45,.45)" stroke-width="1"/>
+                                <ellipse cx="100" cy="341" rx="28" ry="8"  fill="rgba(50,38,18,.4)"  stroke="rgba(90,68,35,.35)"  stroke-width="1"/>
+                            </svg>
+                        </div>
                         <div class="product-img-overlay"></div>
                     </div>
                     <div class="product-meta">
@@ -250,6 +455,58 @@
                             <span class="stat-label">Dubbe / Schirm</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Farbwechsel Section -->
+    <section id="farben" style="background: var(--bg-elevated); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="farben-grid">
+                <div>
+                    <div class="section-label" data-reveal>
+                        <span class="label-num">✦</span>
+                        <span>RGB Farbwechsel</span>
+                    </div>
+                    <h2 class="section-title" data-split-text>
+                        <span class="line"><span class="line-inner">Jede Stimmung.</span></span>
+                        <span class="line"><span class="line-inner">Dein Licht<span class="accent">.</span></span></span>
+                    </h2>
+                    <p class="about-text" data-reveal>Die Dubbe Funzel leuchtet nicht nur weiß. Mit integrierter RGB-Technik wechselt sie durch das gesamte Farbspektrum – für Partystimmung, romantisches Ambiente oder ruhiges Entspannungslicht.</p>
+                    <p class="about-text" data-reveal style="margin-top:1rem;">Steuerbar per Fernbedienung oder App. Dimmen, automatischer Farbwechsel, Szenen – alles inklusive.</p>
+                    <div class="color-orbs" data-reveal>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#ff9999,#dd0000);box-shadow:0 0 16px rgba(220,0,0,.6);" title="Rot"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#ffcc77,#ee8800);box-shadow:0 0 16px rgba(238,136,0,.6);" title="Orange"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#ffff88,#c8ff00);box-shadow:0 0 16px rgba(200,255,0,.6);" title="Gelb-Grün"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#88ff88,#00bb00);box-shadow:0 0 16px rgba(0,180,0,.6);" title="Grün"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#88eeff,#00aacc);box-shadow:0 0 16px rgba(0,170,200,.6);" title="Cyan"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#9999ff,#3333ee);box-shadow:0 0 16px rgba(50,50,230,.6);" title="Blau"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#ff99ff,#cc00cc);box-shadow:0 0 16px rgba(200,0,200,.6);" title="Lila"></button>
+                        <button class="color-orb" style="background:radial-gradient(circle at 35% 35%,#fff5e4,#ffe4b0);box-shadow:0 0 16px rgba(255,220,160,.6);" title="Warmweiß"></button>
+                    </div>
+                </div>
+                <div class="farben-visual" data-reveal>
+                    <svg id="farbenLamp" class="lamp-svg-anim" viewBox="0 0 200 310" width="200" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="ig" cx="50%" cy="55%" r="50%">
+                                <stop offset="0%" stop-color="rgba(255,255,255,.2)"/>
+                                <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                            </radialGradient>
+                        </defs>
+                        <path d="M56 30 L50 258 Q50 272 100 272 Q150 272 150 258 L144 30Z" class="shade-anim"/>
+                        <ellipse cx="100" cy="32" rx="46" ry="10" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
+                        <ellipse cx="100" cy="264" rx="52" ry="11" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+                        <ellipse cx="100" cy="150" rx="35" ry="95" fill="url(#ig)"/>
+                        <circle cx="79"  cy="66"  r="12" class="dimple-anim"/><circle cx="100" cy="66"  r="12" class="dimple-anim"/><circle cx="121" cy="66"  r="12" class="dimple-anim"/>
+                        <circle cx="67"  cy="96"  r="12" class="dimple-anim"/><circle cx="90"  cy="96"  r="12" class="dimple-anim"/><circle cx="113" cy="96"  r="12" class="dimple-anim"/><circle cx="135" cy="96"  r="12" class="dimple-anim"/>
+                        <circle cx="74"  cy="128" r="13" class="dimple-anim"/><circle cx="100" cy="128" r="13" class="dimple-anim"/><circle cx="126" cy="128" r="13" class="dimple-anim"/>
+                        <circle cx="62"  cy="162" r="14" class="dimple-anim"/><circle cx="88"  cy="162" r="14" class="dimple-anim"/><circle cx="114" cy="162" r="14" class="dimple-anim"/><circle cx="140" cy="162" r="14" class="dimple-anim"/>
+                        <circle cx="74"  cy="200" r="14" class="dimple-anim"/><circle cx="100" cy="200" r="14" class="dimple-anim"/><circle cx="126" cy="200" r="14" class="dimple-anim"/>
+                        <circle cx="62"  cy="236" r="14" class="dimple-anim"/><circle cx="88"  cy="236" r="14" class="dimple-anim"/><circle cx="114" cy="236" r="14" class="dimple-anim"/><circle cx="140" cy="236" r="14" class="dimple-anim"/>
+                        <rect x="96" y="272" width="8" height="38" fill="rgba(90,70,40,.55)" rx="2"/>
+                        <ellipse cx="100" cy="313" rx="35" ry="11" fill="rgba(70,55,30,.6)" stroke="rgba(110,85,45,.4)" stroke-width="1"/>
+                    </svg>
                 </div>
             </div>
         </div>
@@ -360,6 +617,53 @@
         </div>
     </section>
 
+    <!-- Nachhaltigkeit Section -->
+    <section id="nachhaltigkeit">
+        <div class="container">
+            <div class="section-label" data-reveal>
+                <span class="label-num">✦</span>
+                <span>Nachhaltigkeit</span>
+            </div>
+            <h2 class="section-title" data-split-text>
+                <span class="line"><span class="line-inner">Gut für dein Zuhause.</span></span>
+                <span class="line"><span class="line-inner">Gut für die Welt<span class="accent">.</span></span></span>
+            </h2>
+            <div class="sustain-grid">
+                <div class="sustain-card" data-reveal>
+                    <div class="sustain-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2C6 6 4 11 6 16c2 4 6 6 6 6s4-2 6-6c2-5 0-10-6-14z"/>
+                            <path d="M12 12c-2-3-1-7 2-9"/>
+                        </svg>
+                    </div>
+                    <h3 class="sustain-title">PLA – Biobasiert & natürlich</h3>
+                    <p class="sustain-text">Alle Schirme werden aus PLA gedruckt – einem biobasierten Kunststoff aus nachwachsenden Rohstoffen wie Maisstärke. Umweltfreundlich produziert, ohne Kompromisse beim Design.</p>
+                </div>
+                <div class="sustain-card" data-reveal>
+                    <div class="sustain-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15"/>
+                        </svg>
+                    </div>
+                    <h3 class="sustain-title">Schirm kaputt? Einfach tauschen.</h3>
+                    <p class="sustain-text">Kein Wegwerfen der ganzen Lampe. Wenn der Schirm beschädigt wird, einfach einen neuen nachbestellen – Sockel und Technik bleiben. Nachhaltig durch Reparierbarkeit.</p>
+                </div>
+                <div class="sustain-card" data-reveal>
+                    <div class="sustain-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                    <h3 class="sustain-title">Lokal. Handgefertigt. Unikat.</h3>
+                    <p class="sustain-text">Jeder Schirm entsteht per 3D-Druck direkt in der Pfalz. Keine Massenware, keine langen Transportwege – regionaler Handwerk trifft auf moderne Technologie.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact Section -->
     <section id="kontakt" class="contact-section">
         <div class="container">
@@ -435,5 +739,59 @@
     <script async src="https://cdn.snipcart.com/themes/v3.2.2/default/snipcart.js"></script>
     <div hidden id="snipcart" data-api-key="DEIN_SNIPCART_API_KEY"></div>
     <script src="main.js"></script>
+    <script>
+        // Color orb interaction – click to pin a color on the Farben lamp
+        (function () {
+            const orbs = document.querySelectorAll('.color-orb');
+            const lamp = document.getElementById('farbenLamp');
+            const shades = lamp ? lamp.querySelectorAll('.shade-anim') : [];
+            const dimples = lamp ? lamp.querySelectorAll('.dimple-anim') : [];
+
+            const colors = [
+                { r:255, g:60,  b:60  },
+                { r:255, g:150, b:20  },
+                { r:200, g:255, b:0   },
+                { r:30,  g:200, b:60  },
+                { r:0,   g:200, b:240 },
+                { r:70,  g:80,  b:255 },
+                { r:200, g:50,  b:200 },
+                { r:255, g:230, b:170 },
+            ];
+
+            function pinColor(c) {
+                if (!lamp) return;
+                lamp.style.animation = 'none';
+                lamp.style.filter =
+                    `drop-shadow(0 0 22px rgba(${c.r},${c.g},${c.b},.9)) drop-shadow(0 0 55px rgba(${c.r},${c.g},${c.b},.4))`;
+                shades.forEach(el => {
+                    el.style.animation = 'none';
+                    el.style.fill   = `rgba(${c.r},${c.g},${c.b},.13)`;
+                    el.style.stroke = `rgba(${c.r},${c.g},${c.b},.7)`;
+                });
+                dimples.forEach(el => {
+                    el.style.animation = 'none';
+                    el.style.fill   = 'rgba(0,0,0,.25)';
+                    el.style.stroke = `rgba(${c.r},${c.g},${c.b},.65)`;
+                });
+            }
+
+            function resetColor() {
+                if (!lamp) return;
+                lamp.style.animation = '';
+                lamp.style.filter = '';
+                shades.forEach(el => { el.style.animation = ''; el.style.fill = ''; el.style.stroke = ''; });
+                dimples.forEach(el => { el.style.animation = ''; el.style.fill = ''; el.style.stroke = ''; });
+            }
+
+            orbs.forEach((orb, i) => {
+                orb.addEventListener('click', () => {
+                    const active = orb.classList.contains('orb-active');
+                    orbs.forEach(o => o.classList.remove('orb-active'));
+                    if (active) { resetColor(); }
+                    else { orb.classList.add('orb-active'); pinColor(colors[i]); }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>
