@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DGUV-3 Prüfungsplanung – Objektauswahl</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <span class="header-logo">⚡ DGUV-3 Prüfungsplanung</span>
+  <nav class="header-nav">
+    <a href="/admin">Admin</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>Terminplanung Geräteprüfung</h1>
+    <p>Wählen Sie Ihr Objekt (Straße / Einrichtung), um Ihre Verfügbarkeiten für die elektrische Geräteprüfung einzutragen.</p>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Objekt oder Straße suchen..." autocomplete="off">
+      <button class="btn btn-primary" onclick="filterObjects()">Suchen</button>
+    </div>
+  </div>
+
+  <div id="objectList" class="object-list"></div>
+  <div id="emptyMsg" style="display:none; text-align:center; color:var(--gray-400); padding:40px 0; font-size:15px;">
+    Keine Objekte gefunden.
+  </div>
+  <div id="loadingMsg" style="text-align:center; color:var(--gray-400); padding:40px 0; font-size:15px;">
+    Objekte werden geladen…
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+let allObjects = [];
+
+async function loadObjects() {
+  try {
+    const res = await fetch('/api/objects');
+    allObjects = await res.json();
+    document.getElementById('loadingMsg').style.display = 'none';
+    renderObjects(allObjects);
+  } catch (e) {
+    document.getElementById('loadingMsg').textContent = 'Fehler beim Laden der Objekte.';
+  }
+}
+
+function renderObjects(list) {
+  const el = document.getElementById('objectList');
+  const empty = document.getElementById('emptyMsg');
+
+  if (list.length === 0) {
+    el.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  el.innerHTML = list.map(o => {
+    const slotsNeeded = Math.ceil(o.device_count / 75);
+    const kwInfo = o.kw_start && o.kw_end
+      ? `<span class="badge badge-blue" style="margin-top:8px;display:inline-block;">KW ${o.kw_start}–${o.kw_end}</span>`
+      : '';
+    const group = o.group_name
+      ? `<div class="meta">${o.group_name}</div>`
+      : '';
+    return `
+      <div class="object-card" onclick="selectObject(${o.id}, '${escHtml(o.name)}')">
+        <h3>${escHtml(o.name)}</h3>
+        ${group}
+        <div class="device-count">${o.device_count}</div>
+        <div class="device-label">Geräte · ${slotsNeeded} Zeitfenster benötigt</div>
+        ${kwInfo}
+      </div>
+    `;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function filterObjects() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) return renderObjects(allObjects);
+  renderObjects(allObjects.filter(o => o.name.toLowerCase().includes(q) || (o.street || '').toLowerCase().includes(q) || (o.group_name || '').toLowerCase().includes(q)));
+}
+
+function selectObject(id, name) {
+  window.location.href = `/kalender.html?id=${id}&name=${encodeURIComponent(name)}`;
+}
+
+document.getElementById('searchInput').addEventListener('input', filterObjects);
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') filterObjects(); });
+
+loadObjects();
+</script>
+</body>
+</html>

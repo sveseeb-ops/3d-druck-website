@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DGUV-3 – Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-wrap" style="display:none;">
+  <div class="login-card">
+    <h1>⚡ Admin-Login</h1>
+    <p>DGUV-3 Prüfungsplanung</p>
+    <form onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>Benutzername</label>
+        <input type="text" id="loginUser" value="admin" required>
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input type="password" id="loginPass" required>
+      </div>
+      <div id="loginError" class="alert alert-error" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">Einloggen</button>
+    </form>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none;">
+
+<header class="header">
+  <span class="header-logo">⚡ DGUV-3 Admin</span>
+  <nav class="header-nav">
+    <a href="/">Buchungsseite</a>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()">Abmelden</button>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Stats row -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-num" id="statObjects">–</div><div class="stat-label">Objekte</div></div>
+    <div class="stat-card"><div class="stat-num" id="statDevices">–</div><div class="stat-label">Geräte gesamt</div></div>
+    <div class="stat-card"><div class="stat-num" id="statBooked">–</div><div class="stat-label">Eingeplant</div></div>
+    <div class="stat-card"><div class="stat-num" id="statPending">–</div><div class="stat-label">Noch offen</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('tabObjekte')">Objekte</button>
+    <button class="tab-btn" onclick="showTab('tabGruppen')">Gruppen & KW</button>
+    <button class="tab-btn" onclick="showTab('tabPlanung')">Planung</button>
+    <button class="tab-btn" onclick="showTab('tabKalender')">Admin-Kalender</button>
+    <button class="tab-btn" onclick="showTab('tabSettings')">Einstellungen</button>
+  </div>
+
+  <!-- ── TAB: OBJEKTE ──────────────────────────────────────────────────────── -->
+  <div id="tabObjekte" class="tab-panel active">
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <span>📋 Objekte verwalten</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="showUpload()">📥 Excel importieren</button>
+          <button class="btn btn-primary btn-sm" onclick="showAddObject()">+ Objekt hinzufügen</button>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- Excel Upload -->
+        <div id="uploadSection" style="display:none;margin-bottom:20px;">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div style="font-size:32px;">📂</div>
+            <strong>Excel-Datei hochladen</strong>
+            <p>Spalten: <strong>Objekt</strong> (oder Straße/Name) · <strong>Geräte</strong> (oder Anzahl)</p>
+            <p>Klicken oder Datei hierher ziehen</p>
+          </div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="uploadExcel(this.files[0])">
+          <div id="uploadResult" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- Filter -->
+        <div style="margin-bottom:14px;">
+          <input type="text" id="objFilter" placeholder="Objekte filtern…" oninput="renderObjectTable()" style="max-width:320px;">
+        </div>
+
+        <div class="table-wrap">
+          <table id="objectTable">
+            <thead>
+              <tr>
+                <th>Objekt</th>
+                <th>Geräte</th>
+                <th>Fenster nötig</th>
+                <th>Gruppe</th>
+                <th>Kontakt</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="objectTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: GRUPPEN ──────────────────────────────────────────────────────── -->
+  <div id="tabGruppen" class="tab-panel">
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <span>🗂 Gruppen & Kalenderwochen-Einschränkungen</span>
+        <button class="btn btn-primary btn-sm" onclick="showAddGroup()">+ Gruppe hinzufügen</button>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info mb-4">
+          Gruppen ermöglichen es, bestimmten Objekten nur bestimmte Kalenderwochen zuzuweisen.
+          Beispiel: Kitas dürfen nur in KW 20–30 Termine eintragen.
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Gruppe</th><th>Erlaubte KW</th><th>Jahr</th><th>Objekte</th><th></th></tr>
+            </thead>
+            <tbody id="groupTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: PLANUNG ──────────────────────────────────────────────────────── -->
+  <div id="tabPlanung" class="tab-panel">
+    <div class="card mb-4">
+      <div class="card-header">🤖 Automatische Einplanung</div>
+      <div class="card-body">
+        <p style="color:var(--gray-600);margin-bottom:16px;">
+          Das System verteilt alle Objekte automatisch auf die markierten Verfügbarkeiten.
+          Große Objekte bekommen mehrere Zeitfenster, möglichst am gleichen Tag.
+          Kapazität: max. <strong>75 Geräte / Fenster</strong>, max. <strong>300 Geräte / Tag</strong>.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-success btn-lg" onclick="runScheduler()">▶ Auto-Planung starten</button>
+          <button class="btn btn-danger btn-outline" onclick="clearBookings()">🗑 Alle Buchungen löschen</button>
+        </div>
+        <div id="scheduleResult" style="margin-top:20px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <span>📋 Alle Buchungen</span>
+        <button class="btn btn-outline btn-sm" onclick="exportBookings()">📥 CSV Export</button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Datum</th><th>Zeitfenster</th><th>Objekt</th><th>Gruppe</th><th>Geräte</th></tr>
+            </thead>
+            <tbody id="bookingTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: ADMIN-KALENDER ───────────────────────────────────────────────── -->
+  <div id="tabKalender" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="kalender-header" style="width:100%;">
+          <button class="btn btn-outline" onclick="adminCalPrev()">◀</button>
+          <h2 id="adminCalTitle" style="flex:1;text-align:center;font-size:17px;"></h2>
+          <button class="btn btn-outline" onclick="adminCalNext()">▶</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;">
+          <span><span style="background:#F0FDF4;padding:2px 8px;border-radius:4px;">Grün</span> = eingeplant</span>
+          <span><span style="background:var(--yellow-light);padding:2px 8px;border-radius:4px;">Gelb</span> = halb voll</span>
+          <span><span style="background:var(--gray-100);padding:2px 8px;border-radius:4px;">Grau</span> = leer</span>
+        </div>
+
+        <!-- Weekday header -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px;">
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);">MO</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);">DI</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);">MI</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);">DO</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);">FR</div>
+        </div>
+
+        <div id="adminCalGrid" class="admin-cal-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: EINSTELLUNGEN ────────────────────────────────────────────────── -->
+  <div id="tabSettings" class="tab-panel">
+    <div class="card" style="max-width:400px;">
+      <div class="card-header">🔐 Passwort ändern</div>
+      <div class="card-body">
+        <form onsubmit="changePassword(event)">
+          <div class="form-group">
+            <label>Aktuelles Passwort</label>
+            <input type="password" id="curPass" required>
+          </div>
+          <div class="form-group">
+            <label>Neues Passwort</label>
+            <input type="password" id="newPass" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label>Neues Passwort wiederholen</label>
+            <input type="password" id="newPass2" required minlength="6">
+          </div>
+          <div id="pwError" class="alert alert-error" style="display:none;"></div>
+          <button type="submit" class="btn btn-primary">Passwort speichern</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</div><!-- /adminPanel -->
+
+<!-- ── MODALS ─────────────────────────────────────────────────────────────── -->
+
+<!-- Add/Edit Object -->
+<div id="objectModal" class="modal-overlay" style="display:none;" onclick="closeModal('objectModal',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="objectModalTitle">Objekt hinzufügen</h2>
+    <input type="hidden" id="editObjectId">
+    <div class="modal-grid">
+      <div class="form-group">
+        <label>Objekt / Straße *</label>
+        <input type="text" id="objName" required placeholder="z.B. Musterstraße 12">
+      </div>
+      <div class="form-group">
+        <label>Geräteanzahl *</label>
+        <input type="number" id="objDevices" required min="1" placeholder="z.B. 120">
+      </div>
+      <div class="form-group">
+        <label>Gruppe</label>
+        <select id="objGroup"><option value="">– keine –</option></select>
+      </div>
+      <div class="form-group">
+        <label>Kontaktperson</label>
+        <input type="text" id="objContact" placeholder="Name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>E-Mail</label>
+      <input type="email" id="objEmail" placeholder="email@beispiel.de">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hide('objectModal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveObject()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Group -->
+<div id="groupModal" class="modal-overlay" style="display:none;" onclick="closeModal('groupModal',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="groupModalTitle">Gruppe hinzufügen</h2>
+    <input type="hidden" id="editGroupId">
+    <div class="form-group">
+      <label>Gruppenname *</label>
+      <input type="text" id="grpName" required placeholder="z.B. Kindergärten, Schulen">
+    </div>
+    <div class="alert alert-info">
+      Kalenderwochen-Einschränkung (optional): Objekte dieser Gruppe können nur in den angegebenen KW Termine eintragen.
+    </div>
+    <div class="modal-grid">
+      <div class="form-group">
+        <label>KW von</label>
+        <input type="number" id="grpKwStart" min="1" max="53" placeholder="z.B. 20">
+      </div>
+      <div class="form-group">
+        <label>KW bis</label>
+        <input type="number" id="grpKwEnd" min="1" max="53" placeholder="z.B. 30">
+      </div>
+      <div class="form-group">
+        <label>Jahr</label>
+        <input type="number" id="grpYear" placeholder="2025">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hide('groupModal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveGroup()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Slot detail -->
+<div id="slotDetailOverlay" class="slot-detail-overlay" style="display:none;" onclick="hide('slotDetailOverlay')">
+  <div class="slot-detail-box" onclick="event.stopPropagation()">
+    <h3 id="slotDetailTitle"></h3>
+    <div id="slotDetailContent"></div>
+    <div style="text-align:right;margin-top:16px;">
+      <button class="btn btn-outline" onclick="hide('slotDetailOverlay')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const SLOT_TIMES = ['08:30–10:00','10:00–11:30','11:30–13:00','13:00–14:30'];
+const SLOT_SHORT = ['08:30','10:00','11:30','13:00'];
+
+let objects = [], groups = [], bookingsData = [];
+let adminCalYear = new Date().getFullYear();
+let adminCalMonth = new Date().getMonth() + 1;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+async function checkAuth() {
+  const res = await fetch('/api/auth/status').then(r => r.json());
+  if (res.isAdmin) {
+    show('adminPanel');
+    await loadAll();
+  } else {
+    show('loginScreen');
+  }
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value })
+    });
+    if (res.ok) {
+      hide('loginScreen'); show('adminPanel');
+      await loadAll();
+    } else {
+      const d = await res.json();
+      err.textContent = d.error;
+      err.style.display = 'block';
+    }
+  } catch(e) { err.textContent = 'Verbindungsfehler'; err.style.display = 'block'; }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST' });
+  hide('adminPanel'); show('loginScreen');
+}
+
+// ── Data loading ──────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  await Promise.all([loadObjects(), loadGroups(), loadBookings()]);
+  updateStats();
+  renderAdminCal();
+}
+
+async function loadObjects() {
+  objects = await fetch('/api/objects').then(r => r.json());
+  renderObjectTable();
+}
+
+async function loadGroups() {
+  groups = await fetch('/api/groups').then(r => r.json());
+  renderGroupTable();
+  // Populate group select
+  const sel = document.getElementById('objGroup');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">– keine –</option>' +
+    groups.map(g => `<option value="${g.id}">${escHtml(g.name)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+async function loadBookings() {
+  bookingsData = await fetch('/api/bookings').then(r => r.json());
+  renderBookingTable();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  const totalDevices = objects.reduce((s, o) => s + o.device_count, 0);
+  const bookedObjects = new Set(bookingsData.map(b => b.object_id)).size;
+  document.getElementById('statObjects').textContent = objects.length;
+  document.getElementById('statDevices').textContent = totalDevices;
+  document.getElementById('statBooked').textContent = bookedObjects;
+  document.getElementById('statPending').textContent = objects.length - bookedObjects;
+}
+
+// ── Object table ──────────────────────────────────────────────────────────────
+
+function renderObjectTable() {
+  const q = (document.getElementById('objFilter')?.value || '').toLowerCase();
+  const bookedIds = new Set(bookingsData.map(b => b.object_id));
+  const filtered = objects.filter(o =>
+    !q || o.name.toLowerCase().includes(q) || (o.group_name || '').toLowerCase().includes(q)
+  );
+
+  document.getElementById('objectTbody').innerHTML = filtered.map(o => {
+    const needed = Math.ceil(o.device_count / 75);
+    const isBooked = bookedIds.has(o.id);
+    return `
+      <tr>
+        <td><strong>${escHtml(o.name)}</strong></td>
+        <td>${o.device_count}</td>
+        <td>${needed}</td>
+        <td>${o.group_name ? `<span class="badge badge-blue">${escHtml(o.group_name)}</span>` : '<span class="text-muted">–</span>'}</td>
+        <td>${o.contact_name ? escHtml(o.contact_name) : '<span class="text-muted">–</span>'}</td>
+        <td>${isBooked ? '<span class="badge badge-green">Eingeplant</span>' : '<span class="badge badge-gray">Offen</span>'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-outline btn-sm" onclick="editObject(${o.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteObject(${o.id},'${escHtml(o.name)}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:24px;">Keine Objekte vorhanden</td></tr>';
+}
+
+// ── Object CRUD ───────────────────────────────────────────────────────────────
+
+function showAddObject() {
+  document.getElementById('objectModalTitle').textContent = 'Objekt hinzufügen';
+  document.getElementById('editObjectId').value = '';
+  document.getElementById('objName').value = '';
+  document.getElementById('objDevices').value = '';
+  document.getElementById('objGroup').value = '';
+  document.getElementById('objContact').value = '';
+  document.getElementById('objEmail').value = '';
+  show('objectModal');
+}
+
+function editObject(id) {
+  const o = objects.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('objectModalTitle').textContent = 'Objekt bearbeiten';
+  document.getElementById('editObjectId').value = id;
+  document.getElementById('objName').value = o.name;
+  document.getElementById('objDevices').value = o.device_count;
+  document.getElementById('objGroup').value = o.group_id || '';
+  document.getElementById('objContact').value = o.contact_name || '';
+  document.getElementById('objEmail').value = o.contact_email || '';
+  show('objectModal');
+}
+
+async function saveObject() {
+  const id = document.getElementById('editObjectId').value;
+  const body = {
+    name: document.getElementById('objName').value.trim(),
+    device_count: document.getElementById('objDevices').value,
+    group_id: document.getElementById('objGroup').value || null,
+    contact_name: document.getElementById('objContact').value.trim() || null,
+    contact_email: document.getElementById('objEmail').value.trim() || null
+  };
+  if (!body.name || !body.device_count) return showToast('Name und Geräteanzahl erforderlich', 'error');
+
+  const url = id ? `/api/objects/${id}` : '/api/objects';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (res.ok) {
+    hide('objectModal');
+    showToast(id ? 'Objekt aktualisiert' : 'Objekt hinzugefügt', 'success');
+    await loadObjects();
+    updateStats();
+  } else {
+    const d = await res.json();
+    showToast(d.error, 'error');
+  }
+}
+
+async function deleteObject(id, name) {
+  if (!confirm(`Objekt "${name}" wirklich löschen? Alle zugehörigen Verfügbarkeiten und Buchungen werden ebenfalls gelöscht.`)) return;
+  const res = await fetch(`/api/objects/${id}`, { method: 'DELETE' });
+  if (res.ok) { showToast('Objekt gelöscht', 'success'); await loadAll(); }
+}
+
+// ── Excel Upload ──────────────────────────────────────────────────────────────
+
+function showUpload() {
+  const s = document.getElementById('uploadSection');
+  s.style.display = s.style.display === 'none' ? 'block' : 'none';
+}
+
+async function uploadExcel(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/upload-excel', { method: 'POST', body: fd });
+  const d = await res.json();
+  const resultEl = document.getElementById('uploadResult');
+  if (res.ok) {
+    resultEl.innerHTML = `<div class="alert alert-success">${d.imported} Objekte importiert${d.errors.length ? ` · ${d.errors.length} Fehler` : ''}</div>`;
+    showToast(`${d.imported} Objekte importiert`, 'success');
+    await loadAll();
+  } else {
+    resultEl.innerHTML = `<div class="alert alert-error">${d.error}</div>`;
+  }
+  document.getElementById('fileInput').value = '';
+
+  // Drag & drop
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) uploadExcel(e.dataTransfer.files[0]);
+  });
+}
+
+// ── Groups ────────────────────────────────────────────────────────────────────
+
+function renderGroupTable() {
+  document.getElementById('groupTbody').innerHTML = groups.map(g => {
+    const objCount = objects.filter(o => o.group_id === g.id).length;
+    const kwInfo = g.kw_start && g.kw_end ? `KW ${g.kw_start}–${g.kw_end} (${g.year})` : '<span class="text-muted">Keine Einschränkung</span>';
+    return `
+      <tr>
+        <td><strong>${escHtml(g.name)}</strong></td>
+        <td>${kwInfo}</td>
+        <td>${g.year || '–'}</td>
+        <td><span class="badge badge-gray">${objCount}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editGroup(${g.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteGroup(${g.id},'${escHtml(g.name)}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">Keine Gruppen vorhanden</td></tr>';
+}
+
+function showAddGroup() {
+  document.getElementById('groupModalTitle').textContent = 'Gruppe hinzufügen';
+  document.getElementById('editGroupId').value = '';
+  document.getElementById('grpName').value = '';
+  document.getElementById('grpKwStart').value = '';
+  document.getElementById('grpKwEnd').value = '';
+  document.getElementById('grpYear').value = new Date().getFullYear();
+  show('groupModal');
+}
+
+function editGroup(id) {
+  const g = groups.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('groupModalTitle').textContent = 'Gruppe bearbeiten';
+  document.getElementById('editGroupId').value = id;
+  document.getElementById('grpName').value = g.name;
+  document.getElementById('grpKwStart').value = g.kw_start || '';
+  document.getElementById('grpKwEnd').value = g.kw_end || '';
+  document.getElementById('grpYear').value = g.year || new Date().getFullYear();
+  show('groupModal');
+}
+
+async function saveGroup() {
+  const id = document.getElementById('editGroupId').value;
+  const body = {
+    name: document.getElementById('grpName').value.trim(),
+    kw_start: document.getElementById('grpKwStart').value || null,
+    kw_end: document.getElementById('grpKwEnd').value || null,
+    year: document.getElementById('grpYear').value || new Date().getFullYear()
+  };
+  if (!body.name) return showToast('Name erforderlich', 'error');
+
+  const url = id ? `/api/groups/${id}` : '/api/groups';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (res.ok) {
+    hide('groupModal');
+    showToast('Gruppe gespeichert', 'success');
+    await loadGroups();
+    renderObjectTable(); // refresh group labels
+  } else {
+    const d = await res.json();
+    showToast(d.error, 'error');
+  }
+}
+
+async function deleteGroup(id, name) {
+  if (!confirm(`Gruppe "${name}" löschen? Objekte werden keiner Gruppe mehr zugeordnet.`)) return;
+  await fetch(`/api/groups/${id}`, { method: 'DELETE' });
+  showToast('Gruppe gelöscht', 'success');
+  await loadAll();
+}
+
+// ── Scheduler ─────────────────────────────────────────────────────────────────
+
+async function runScheduler() {
+  const btn = document.querySelector('[onclick="runScheduler()"]');
+  btn.disabled = true;
+  btn.textContent = '⏳ Wird geplant…';
+
+  const res = await fetch('/api/auto-schedule', { method: 'POST' });
+  const d = await res.json();
+  btn.disabled = false;
+  btn.textContent = '▶ Auto-Planung starten';
+
+  let html = '';
+  if (d.assigned && d.assigned.length > 0) {
+    html += `<div class="alert alert-success">✓ ${d.assigned.length} Objekte erfolgreich eingeplant:<br><small>${d.assigned.join(' · ')}</small></div>`;
+  }
+  if (d.failed && d.failed.length > 0) {
+    html += `<div class="alert alert-error">⚠ ${d.failed.length} Objekte konnten nicht eingeplant werden:<br>`;
+    html += d.failed.map(f => `<small>• ${escHtml(f.name)}: ${f.reason}</small>`).join('<br>');
+    html += '</div>';
+  }
+  if (!d.assigned?.length && !d.failed?.length) {
+    html = '<div class="alert alert-warning">Keine Verfügbarkeiten gefunden. Bitte Objekte im Kalender markieren.</div>';
+  }
+
+  document.getElementById('scheduleResult').innerHTML = html;
+  await loadAll();
+}
+
+async function clearBookings() {
+  if (!confirm('Alle Buchungen wirklich löschen?')) return;
+  await fetch('/api/bookings', { method: 'DELETE' });
+  showToast('Buchungen gelöscht', 'success');
+  await loadAll();
+}
+
+function renderBookingTable() {
+  document.getElementById('bookingTbody').innerHTML = bookingsData.map(b => {
+    const d = new Date(b.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+    return `
+      <tr>
+        <td>${dateStr}</td>
+        <td>${SLOT_TIMES[b.slot_index]}</td>
+        <td><strong>${escHtml(b.object_name)}</strong></td>
+        <td>${b.group_name ? `<span class="badge badge-blue">${escHtml(b.group_name)}</span>` : '–'}</td>
+        <td>${b.devices_in_slot}</td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">Keine Buchungen vorhanden – Auto-Planung starten</td></tr>';
+}
+
+function exportBookings() {
+  const rows = [['Datum','Zeitfenster','Objekt','Gruppe','Geräte']];
+  bookingsData.forEach(b => {
+    const d = new Date(b.date + 'T00:00:00').toLocaleDateString('de-DE');
+    rows.push([d, SLOT_TIMES[b.slot_index], b.object_name, b.group_name || '', b.devices_in_slot]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dguv3-planung.csv';
+  a.click();
+}
+
+// ── Admin Calendar ────────────────────────────────────────────────────────────
+
+async function renderAdminCal() {
+  document.getElementById('adminCalTitle').textContent = `${MONTHS[adminCalMonth-1]} ${adminCalYear}`;
+
+  const data = await fetch(`/api/calendar/${adminCalYear}/${adminCalMonth}`).then(r => r.json());
+
+  // Build slot map
+  const slotMap = {};
+  for (const s of (data.slots || [])) {
+    slotMap[`${s.date}_${s.slot_index}`] = s;
+  }
+
+  // Build bookings map per date/slot for detail view
+  const bookingsBySlot = {};
+  for (const b of bookingsData) {
+    const key = `${b.date}_${b.slot_index}`;
+    if (!bookingsBySlot[key]) bookingsBySlot[key] = [];
+    bookingsBySlot[key].push(b);
+  }
+
+  const daysInMonth = new Date(adminCalYear, adminCalMonth, 0).getDate();
+  const firstDow = new Date(adminCalYear, adminCalMonth-1, 1).getDay();
+  let startOffset = firstDow === 0 ? 6 : firstDow - 1;
+
+  let html = '';
+  for (let i = 0; i < startOffset && i < 5; i++) html += '<div></div>';
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(adminCalYear, adminCalMonth-1, day);
+    const dow = date.getDay();
+    if (dow === 0 || dow === 6) continue;
+
+    const dateStr = `${adminCalYear}-${pad(adminCalMonth)}-${pad(day)}`;
+    const dayTotal = [0,1,2,3].reduce((s,i) => s + (slotMap[`${dateStr}_${i}`]?.total_devices || 0), 0);
+
+    let slotHtml = '';
+    for (let s = 0; s < 4; s++) {
+      const key = `${dateStr}_${s}`;
+      const info = slotMap[key];
+      const used = info?.total_devices || 0;
+      const pct = Math.round(used / 75 * 100);
+
+      let cls = 'admin-slot';
+      if (used === 0) cls += ' empty';
+      else if (pct < 50) cls += ' low';
+      else if (pct < 100) cls += ' medium';
+      else cls += ' full';
+
+      const booksInSlot = bookingsBySlot[key] || [];
+      const detailJson = escHtml(JSON.stringify(booksInSlot.map(b => ({ name: b.object_name, devices: b.devices_in_slot }))));
+
+      slotHtml += `
+        <div class="${cls}" onclick="showSlotDetail('${dateStr}',${s},'${escHtml(SLOT_TIMES[s])}','${detailJson}')">
+          <span>${SLOT_SHORT[s]}</span>
+          <span>${used ? `${used}/75` : '–'}</span>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="admin-cal-day">
+        <div class="admin-cal-day-header">
+          <span>${day}.</span>
+          <span style="color:var(--gray-400);font-size:10px;">${dayTotal ? dayTotal + ' G' : ''}</span>
+        </div>
+        ${slotHtml}
+      </div>
+    `;
+  }
+
+  document.getElementById('adminCalGrid').innerHTML = html;
+}
+
+function showSlotDetail(date, slot, timeLabel, detailJson) {
+  let entries;
+  try { entries = JSON.parse(detailJson.replace(/&#39;/g, "'")); } catch(e) { entries = []; }
+
+  const d = new Date(date + 'T00:00:00');
+  const dateStr = d.toLocaleDateString('de-DE', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+
+  document.getElementById('slotDetailTitle').textContent = `${dateStr} · ${timeLabel}`;
+  document.getElementById('slotDetailContent').innerHTML = entries.length
+    ? entries.map(e => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+          <span>${escHtml(e.name)}</span>
+          <strong>${e.devices} Geräte</strong>
+        </div>
+      `).join('')
+    : '<p style="color:var(--gray-400);text-align:center;padding:16px;">Keine Buchungen für dieses Zeitfenster</p>';
+
+  show('slotDetailOverlay');
+}
+
+async function adminCalPrev() {
+  adminCalMonth--;
+  if (adminCalMonth < 1) { adminCalMonth = 12; adminCalYear--; }
+  await renderAdminCal();
+}
+
+async function adminCalNext() {
+  adminCalMonth++;
+  if (adminCalMonth > 12) { adminCalMonth = 1; adminCalYear++; }
+  await renderAdminCal();
+}
+
+// ── Password ──────────────────────────────────────────────────────────────────
+
+async function changePassword(e) {
+  e.preventDefault();
+  const err = document.getElementById('pwError');
+  err.style.display = 'none';
+  if (document.getElementById('newPass').value !== document.getElementById('newPass2').value) {
+    err.textContent = 'Passwörter stimmen nicht überein';
+    err.style.display = 'block';
+    return;
+  }
+  const res = await fetch('/api/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword: document.getElementById('curPass').value, newPassword: document.getElementById('newPass').value })
+  });
+  if (res.ok) { showToast('Passwort geändert', 'success'); document.getElementById('curPass').value = document.getElementById('newPass').value = document.getElementById('newPass2').value = ''; }
+  else { const d = await res.json(); err.textContent = d.error; err.style.display = 'block'; }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'tabPlanung') loadBookings();
+  if (id === 'tabKalender') renderAdminCal();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function escHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function show(id) { document.getElementById(id).style.display = 'flex'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function closeModal(id, e) { if (e.target.id === id) hide(id); }
+
+function showToast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// fix show for non-flex elements
+const _show = show;
+window.show = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const tag = el.tagName.toLowerCase();
+  if (['div','section','article'].includes(tag) && !el.classList.contains('modal-overlay') && !el.classList.contains('slot-detail-overlay') && !el.classList.contains('login-wrap')) {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'flex';
+  }
+};
+
+checkAuth();
+</script>
+</body>
+</html>
