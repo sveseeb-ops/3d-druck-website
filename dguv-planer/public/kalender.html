@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DGUV-3 – Verfügbarkeit eintragen</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <a href="/" style="color:white;text-decoration:none;font-size:18px;">←</a>
+  <span class="header-logo">⚡ DGUV-3 Prüfungsplanung</span>
+  <span class="header-sub" id="headerObjectName"></span>
+</header>
+
+<div class="container">
+  <div id="objectInfo" style="display:none;">
+    <div class="page-title" id="pageTitle">Verfügbarkeit eintragen</div>
+    <p class="page-sub" id="pageSub"></p>
+
+    <!-- Booking summary (shown when bookings exist) -->
+    <div id="bookingSummary" style="display:none;" class="booking-summary">
+      <h3>✓ Ihre gebuchten Termine</h3>
+      <div id="bookingList"></div>
+    </div>
+
+    <!-- Info chips -->
+    <div class="kalender-info-bar">
+      <div class="info-chip">Geräte: <strong id="chipDevices">–</strong></div>
+      <div class="info-chip">Zeitfenster benötigt: <strong id="chipSlots">–</strong></div>
+      <div class="info-chip" id="chipKW" style="display:none;">Erlaubte KW: <strong id="chipKWVal">–</strong></div>
+      <div class="info-chip">Kapazität/Fenster: <strong>75 Geräte</strong></div>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:20px;">
+      Klicken Sie auf die Zeitfenster, um Ihre Verfügbarkeit zu markieren (blau = verfügbar).
+      Grüne Felder sind bereits fest eingeplant.
+    </div>
+
+    <!-- Calendar navigation -->
+    <div class="card">
+      <div class="card-header">
+        <div class="kalender-header" style="width:100%;">
+          <button class="btn btn-outline" onclick="prevMonth()">◀</button>
+          <h2 id="calTitle" style="flex:1;text-align:center;font-size:18px;"></h2>
+          <button class="btn btn-outline" onclick="nextMonth()">▶</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="weekday-header">
+          <div>Montag</div>
+          <div>Dienstag</div>
+          <div>Mittwoch</div>
+          <div>Donnerstag</div>
+          <div>Freitag</div>
+        </div>
+        <div class="calendar-grid" id="calGrid"></div>
+
+        <!-- Legend -->
+        <div class="legend" style="margin-top:16px;">
+          <div class="legend-item"><div class="legend-dot free"></div> Verfügbar (noch nicht markiert)</div>
+          <div class="legend-item"><div class="legend-dot marked"></div> Markiert (ich bin verfügbar)</div>
+          <div class="legend-item"><div class="legend-dot booked"></div> Eingeplant ✓</div>
+          <div class="legend-item"><div class="legend-dot locked"></div> Gesperrt / Wochenende</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorMsg" style="display:none;" class="alert alert-error mt-4">Objekt nicht gefunden.</div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+const SLOT_TIMES = ['08:30–10:00','10:00–11:30','11:30–13:00','13:00–14:30'];
+const SLOT_SHORT = ['08:30','10:00','11:30','13:00'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+let objectId, objectData;
+let curYear = new Date().getFullYear();
+let curMonth = new Date().getMonth() + 1;
+let availabilities = new Set();  // "date_slot"
+let bookings = new Map();        // "date_slot" -> {devices_in_slot}
+let calData = {};                // {slots, slotCapacity}
+
+function getParams() {
+  const p = new URLSearchParams(location.search);
+  return { id: p.get('id'), name: p.get('name') };
+}
+
+function getKW(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const y = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - y) / 86400000) + 1) / 7);
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtDate(y, m, d) { return `${y}-${pad(m)}-${pad(d)}`; }
+
+async function init() {
+  const { id, name } = getParams();
+  if (!id) { show('errorMsg'); return; }
+  objectId = id;
+
+  try {
+    const allObjs = await fetch('/api/objects').then(r => r.json());
+    objectData = allObjs.find(o => String(o.id) === String(id));
+    if (!objectData) { show('errorMsg'); return; }
+  } catch(e) { show('errorMsg'); return; }
+
+  show('objectInfo');
+  document.getElementById('headerObjectName').textContent = objectData.name;
+  document.getElementById('pageTitle').textContent = objectData.name;
+
+  const slotsNeeded = objectData.days_needed
+    ? Math.max(1, Math.ceil(objectData.days_needed * 4))
+    : Math.ceil((objectData.device_count || 1) / 75);
+  const tageInfo = objectData.days_needed ? ` · ${objectData.days_needed} Tage` : '';
+  document.getElementById('pageSub').textContent =
+    `${objectData.device_count || '?'} Geräte${tageInfo} – bitte mindestens ${slotsNeeded} Zeitfenster als verfügbar markieren`;
+  document.getElementById('chipDevices').textContent = objectData.device_count || '?';
+  document.getElementById('chipSlots').textContent = slotsNeeded;
+
+  if (objectData.kw_start && objectData.kw_end) {
+    document.getElementById('chipKW').style.display = 'flex';
+    document.getElementById('chipKWVal').textContent = `${objectData.kw_start}–${objectData.kw_end}`;
+    // Navigate to the first allowed week's month
+    const year = objectData.kw_year || new Date().getFullYear();
+    const jan4 = new Date(year, 0, 4);
+    const firstDay = new Date(jan4);
+    firstDay.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (objectData.kw_start - 1) * 7);
+    curYear = firstDay.getFullYear();
+    curMonth = firstDay.getMonth() + 1;
+  }
+
+  await loadMonthData();
+  await loadBookings();
+  renderCalendar();
+}
+
+async function loadMonthData() {
+  try {
+    const [avRes, calRes] = await Promise.all([
+      fetch(`/api/availabilities/${objectId}`).then(r => r.json()),
+      fetch(`/api/calendar/${curYear}/${curMonth}`).then(r => r.json())
+    ]);
+
+    availabilities = new Set(avRes.map(a => `${a.date}_${a.slot_index}`));
+
+    calData = {};
+    for (const s of (calRes.slots || [])) {
+      calData[`${s.date}_${s.slot_index}`] = s;
+    }
+  } catch(e) {}
+}
+
+async function loadBookings() {
+  try {
+    const res = await fetch(`/api/bookings/object/${objectId}`).then(r => r.json());
+    bookings = new Map(res.map(b => [`${b.date}_${b.slot_index}`, b]));
+    renderBookingSummary();
+  } catch(e) {}
+}
+
+function renderBookingSummary() {
+  const summary = document.getElementById('bookingSummary');
+  const list = document.getElementById('bookingList');
+
+  if (bookings.size === 0) { summary.style.display = 'none'; return; }
+  summary.style.display = 'block';
+
+  const sorted = [...bookings.entries()].sort(([a],[b]) => a.localeCompare(b));
+  list.innerHTML = sorted.map(([key, b]) => {
+    const [date, slot] = key.split('_');
+    const d = new Date(date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
+    return `
+      <div class="booking-entry">
+        <span>${dateStr}</span>
+        <span>${SLOT_TIMES[b.slot_index]}</span>
+        <strong>${b.devices_in_slot} Geräte</strong>
+      </div>
+    `;
+  }).join('');
+}
+
+function isRestricted(dateStr) {
+  if (!objectData.kw_start || !objectData.kw_end) return false;
+  const kw = getKW(dateStr);
+  return kw < objectData.kw_start || kw > objectData.kw_end;
+}
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = `${MONTHS[curMonth-1]} ${curYear}`;
+
+  const firstDow = new Date(curYear, curMonth-1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(curYear, curMonth, 0).getDate();
+
+  // Convert Sunday=0 to Mon-based: Mon=0 ... Sun=6
+  let startOffset = (firstDow === 0) ? 6 : firstDow - 1;
+  // We only show Mon-Fri, so we need to shift accordingly
+  // startOffset in 5-col grid = weekday offset (Mon=0)
+
+  const grid = document.getElementById('calGrid');
+  let html = '';
+
+  // Empty cells before first day (only for weekdays)
+  for (let i = 0; i < startOffset && i < 5; i++) {
+    html += `<div class="cal-day empty-slot"></div>`;
+  }
+
+  let col = startOffset; // which column (0=Mon..4=Fri, 5=Sat, 6=Sun)
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(curYear, curMonth-1, day);
+    const dow = date.getDay(); // 0=Sun..6=Sat
+    const isWeekend = dow === 0 || dow === 6;
+
+    if (isWeekend) { col = (col + 1) % 7; continue; }
+
+    const dateStr = fmtDate(curYear, curMonth, day);
+    const restricted = isRestricted(dateStr);
+    const kw = getKW(dateStr);
+
+    let slotsHtml = '';
+    for (let s = 0; s < 4; s++) {
+      const key = `${dateStr}_${s}`;
+      const isAvail = availabilities.has(key);
+      const isBooked = bookings.has(key);
+      const slotInfo = calData[key];
+      const usedDevices = slotInfo ? slotInfo.total_devices : 0;
+      const pct = Math.min(100, Math.round(usedDevices / 75 * 100));
+
+      let cls = 'slot-btn';
+      if (isBooked) cls += ' booked';
+      else if (isAvail) cls += ' available';
+
+      const clickable = !restricted && !isBooked;
+
+      slotsHtml += `
+        <button class="${cls}"
+          ${clickable ? `onclick="toggleSlot('${dateStr}',${s})"` : 'disabled'}
+          title="${SLOT_TIMES[s]}"
+          style="${restricted ? 'cursor:not-allowed;opacity:.4;' : ''}">
+          <span>${SLOT_SHORT[s]}</span>
+          ${isBooked ? '<span style="color:var(--green)">✓</span>' : ''}
+          ${!isBooked ? `<span class="slot-fill" style="font-size:10px;opacity:.6;">${usedDevices}/75</span>` : ''}
+        </button>
+        ${!restricted ? `<div class="slot-fill-bar"><div class="slot-fill-inner" style="width:${pct}%;${isBooked?'background:var(--green)':''}"></div></div>` : ''}
+      `;
+    }
+
+    html += `
+      <div class="cal-day${restricted ? ' restricted' : ''}">
+        <div class="cal-day-header">
+          <span class="cal-day-num">${day}</span>
+          <span class="cal-kw">KW${kw}</span>
+        </div>
+        <div class="cal-day-slots">${slotsHtml}</div>
+      </div>
+    `;
+    col = (col + 1) % 7;
+    // If we hit Saturday column (5), skip to Monday (add nothing, next loop will skip Sat+Sun)
+  }
+
+  grid.innerHTML = html;
+}
+
+async function toggleSlot(date, slotIndex) {
+  try {
+    const res = await fetch('/api/availabilities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ object_id: objectId, date, slot_index: slotIndex })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error, 'error'); return; }
+
+    const key = `${date}_${slotIndex}`;
+    if (data.removed) {
+      availabilities.delete(key);
+      showToast('Zeitfenster entfernt', 'warning');
+    } else {
+      availabilities.add(key);
+      showToast('Zeitfenster als verfügbar markiert', 'success');
+    }
+    renderCalendar();
+  } catch(e) {
+    showToast('Fehler beim Speichern', 'error');
+  }
+}
+
+async function prevMonth() {
+  curMonth--;
+  if (curMonth < 1) { curMonth = 12; curYear--; }
+  await loadMonthData();
+  renderCalendar();
+}
+
+async function nextMonth() {
+  curMonth++;
+  if (curMonth > 12) { curMonth = 1; curYear++; }
+  await loadMonthData();
+  renderCalendar();
+}
+
+function show(id) { document.getElementById(id).style.display = 'block'; }
+
+function showToast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+init();
+</script>
+</body>
+</html>
