@@ -1,0 +1,5 @@
+dguv-planer/node_modules/
+dguv-planer/data/
+dguv-planer/uploads/
+dguv-planer/.env
+*.db

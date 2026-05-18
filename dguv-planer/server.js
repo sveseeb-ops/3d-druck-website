@@ -370,8 +370,8 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'adm
 
 async function start() {
   await getDb(); // initialize DB
-  app.listen(PORT, () => {
-    console.log(`\nDGUV-3 Prüfungsplaner läuft auf http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\nDGUV-3 Prüfungsplaner läuft auf http://0.0.0.0:${PORT}`);
     console.log(`Admin-Login: admin / admin123\n`);
   });
 }
