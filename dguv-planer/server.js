@@ -177,15 +177,43 @@ app.post('/api/upload-excel', requireAdmin, upload.single('file'), async (req, r
     let imported = 0;
     const errors = [];
 
+    // Auto-create groups from Gebäudetyp column
+    const groupCache = {};
+    const ensureGroup = async (typeName) => {
+      if (!typeName) return null;
+      if (groupCache[typeName]) return groupCache[typeName];
+      const existing = await db.get('SELECT id FROM groups WHERE name=?', [typeName]);
+      if (existing) { groupCache[typeName] = existing.id; return existing.id; }
+      const r = await db.run('INSERT INTO groups (name) VALUES (?)', [typeName]);
+      groupCache[typeName] = r.lastID;
+      return r.lastID;
+    };
+
     for (const row of data) {
-      const vals = Object.values(row);
-      const name = String(row['Objekt'] || row['Straße'] || row['Name'] || row['Adresse'] || vals[0] || '').trim();
-      const devices = parseInt(row['Geräte'] || row['Anzahl'] || row['Geräteanzahl'] || row['Anzahl Geräte'] || vals[1]);
+      // Column F: Objekt, G: Straße, I: Stadtteil, J: Gebäudetyp, Q: geprüfte Geräte
+      const name = String(
+        row['Objekt'] || row['Name'] || row['Adresse'] || ''
+      ).trim();
+      const street = String(row['Straße'] || row['Strasse'] || name).trim();
+      const stadtteil = String(row['Stadtteil'] || '').trim();
+      const gebaeudetype = String(row['Gebäudetyp'] || row['Gebaeudetyp'] || row['Typ'] || '').trim();
+
+      const deviceRaw = row['geprüfte Geräte'] || row['geprufte Gerate'] || row['Geräte'] ||
+                        row['Anzahl'] || row['Geräteanzahl'] || row['Anzahl Geräte'] || '';
+      const devices = parseInt(deviceRaw);
+
       if (!name || isNaN(devices) || devices <= 0) {
-        errors.push(`Übersprungen: ${JSON.stringify(row)}`);
+        if (name) errors.push(`Übersprungen (keine Geräte): ${name}`);
         continue;
       }
-      await db.run('INSERT OR REPLACE INTO objects (name,street,device_count) VALUES (?,?,?)', [name, name, devices]);
+
+      const fullName = stadtteil && !name.includes(stadtteil) ? `${name} (${stadtteil})` : name;
+      const groupId = await ensureGroup(gebaeudetype || null);
+
+      await db.run(
+        'INSERT OR REPLACE INTO objects (name,street,device_count,group_id) VALUES (?,?,?,?)',
+        [fullName, street || fullName, devices, groupId]
+      );
       imported++;
     }
 
