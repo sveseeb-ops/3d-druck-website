@@ -75,7 +75,7 @@
           <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
             <div style="font-size:32px;">📂</div>
             <strong>Excel-Datei hochladen</strong>
-            <p>Spalten: <strong>Objekt</strong> (oder Straße/Name) · <strong>Geräte</strong> (oder Anzahl)</p>
+            <p>Erkannte Spalten: <strong>Objekt · Straße · PLZ · Stadtteil · Gebäudetyp · geprüfte Geräte · Tage · Gruppen (Wegeaufwand)</strong></p>
             <p>Klicken oder Datei hierher ziehen</p>
           </div>
           <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="uploadExcel(this.files[0])">
@@ -92,10 +92,12 @@
             <thead>
               <tr>
                 <th>Objekt</th>
+                <th>Stadtteil</th>
                 <th>Geräte</th>
-                <th>Fenster nötig</th>
-                <th>Gruppe</th>
-                <th>Kontakt</th>
+                <th>Tage</th>
+                <th>Fenster</th>
+                <th>Wegegruppe</th>
+                <th>Gebäudetyp</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -405,15 +407,20 @@ function renderObjectTable() {
   );
 
   document.getElementById('objectTbody').innerHTML = filtered.map(o => {
-    const needed = Math.ceil(o.device_count / 75);
+    // slots: prefer days_needed * 4, fallback device_count / 75
+    const slots = o.days_needed ? Math.max(1, Math.ceil(o.days_needed * 4)) : Math.ceil(o.device_count / 75);
+    const tageLabel = o.days_needed != null ? o.days_needed.toFixed(3).replace(/\.?0+$/, '') + ' T' : '–';
     const isBooked = bookedIds.has(o.id);
+    const rgColor = o.route_group ? `hsl(${o.route_group * 37},65%,88%)` : 'transparent';
     return `
       <tr>
-        <td><strong>${escHtml(o.name)}</strong></td>
-        <td>${o.device_count}</td>
-        <td>${needed}</td>
+        <td><strong>${escHtml(o.name)}</strong><br><small style="color:var(--gray-400)">${escHtml(o.street||'')}</small></td>
+        <td>${o.stadtteil ? escHtml(o.stadtteil) : '<span class="text-muted">–</span>'}</td>
+        <td>${o.device_count || '–'}</td>
+        <td>${tageLabel}</td>
+        <td>${slots}</td>
+        <td>${o.route_group != null ? `<span class="badge" style="background:${rgColor};color:#333">Gr. ${o.route_group}</span>` : '<span class="text-muted">–</span>'}</td>
         <td>${o.group_name ? `<span class="badge badge-blue">${escHtml(o.group_name)}</span>` : '<span class="text-muted">–</span>'}</td>
-        <td>${o.contact_name ? escHtml(o.contact_name) : '<span class="text-muted">–</span>'}</td>
         <td>${isBooked ? '<span class="badge badge-green">Eingeplant</span>' : '<span class="badge badge-gray">Offen</span>'}</td>
         <td style="white-space:nowrap;">
           <button class="btn btn-outline btn-sm" onclick="editObject(${o.id})">✏️</button>
@@ -421,7 +428,7 @@ function renderObjectTable() {
         </td>
       </tr>
     `;
-  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:24px;">Keine Objekte vorhanden</td></tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:24px;">Keine Objekte vorhanden</td></tr>';
 }
 
 // ── Object CRUD ───────────────────────────────────────────────────────────────

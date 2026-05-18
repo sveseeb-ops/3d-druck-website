@@ -39,8 +39,14 @@ async function getDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       street TEXT,
+      plz TEXT,
+      stadtteil TEXT,
       device_count INTEGER NOT NULL DEFAULT 0,
+      days_needed REAL,
+      route_group INTEGER,
       group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL,
+      last_inspection TEXT,
+      inspection_cycle INTEGER,
       contact_name TEXT,
       contact_email TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -65,6 +71,22 @@ async function getDb() {
       UNIQUE(object_id, date, slot_index)
     );
   `);
+
+  // Migrate existing databases: add new columns if missing
+  const cols = (await _db.all("PRAGMA table_info(objects)")).map(c => c.name);
+  const migrations = [
+    ['days_needed',       'REAL'],
+    ['route_group',       'INTEGER'],
+    ['plz',               'TEXT'],
+    ['stadtteil',         'TEXT'],
+    ['last_inspection',   'TEXT'],
+    ['inspection_cycle',  'INTEGER'],
+  ];
+  for (const [col, type] of migrations) {
+    if (!cols.includes(col)) {
+      await _db.run(`ALTER TABLE objects ADD COLUMN ${col} ${type}`);
+    }
+  }
 
   const admin = await _db.get('SELECT id FROM admin LIMIT 1');
   if (!admin) {

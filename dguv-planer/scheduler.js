@@ -11,21 +11,26 @@ const SLOT_TIMES = [
 
 const SLOT_SHORT = ['08:30', '10:00', '11:30', '13:00'];
 
-function slotsNeeded(deviceCount) {
-  return Math.ceil(deviceCount / SLOT_CAPACITY);
+// days_needed column (from Excel "Tage") takes priority over device_count/75
+function slotsNeeded(obj) {
+  if (obj.days_needed && obj.days_needed > 0) {
+    return Math.max(1, Math.ceil(obj.days_needed * SLOTS_PER_DAY));
+  }
+  return Math.max(1, Math.ceil(obj.device_count / SLOT_CAPACITY));
 }
 
 async function runAutoSchedule(db) {
+  // Sort: by route_group first (keep groups together), then largest objects first
   const objects = await db.all(`
     SELECT o.*, g.name AS group_name
     FROM objects o
     LEFT JOIN groups g ON o.group_id = g.id
-    ORDER BY o.device_count DESC
+    ORDER BY COALESCE(o.route_group, 9999), o.device_count DESC
   `);
 
-  const availabilities = await db.all(`
-    SELECT a.* FROM availabilities a ORDER BY a.date, a.slot_index
-  `);
+  const availabilities = await db.all(
+    'SELECT a.* FROM availabilities a ORDER BY a.date, a.slot_index'
+  );
 
   const availsByObject = {};
   for (const av of availabilities) {
@@ -33,7 +38,7 @@ async function runAutoSchedule(db) {
     availsByObject[av.object_id].push(av);
   }
 
-  // remaining capacity per slot key "date_slot"
+  // Track remaining capacity per slot "date_slot"
   const slotRemaining = {};
   const getRemaining = (date, slot) => {
     const k = `${date}_${slot}`;
@@ -46,13 +51,17 @@ async function runAutoSchedule(db) {
     slotRemaining[k] -= devices;
   };
 
+  // Track preferred dates per route_group for travel optimization
+  const routeGroupDates = {}; // route_group -> Set<date>
+
   await db.run('DELETE FROM bookings');
 
   const assigned = [];
   const failed = [];
 
   for (const obj of objects) {
-    const needed = slotsNeeded(obj.device_count);
+    const needed = slotsNeeded(obj);
+
     const available = (availsByObject[obj.id] || []).filter(
       av => getRemaining(av.date, av.slot_index) > 0
     );
@@ -62,7 +71,7 @@ async function runAutoSchedule(db) {
       continue;
     }
 
-    // Group by date
+    // Group available slots by date
     const byDate = {};
     for (const av of available) {
       if (!byDate[av.date]) byDate[av.date] = [];
@@ -70,22 +79,33 @@ async function runAutoSchedule(db) {
     }
     for (const d in byDate) byDate[d].sort((a, b) => a.slot_index - b.slot_index);
 
+    // Build sorted date list: route_group preferred dates first, then others
+    const preferredDates = obj.route_group ? (routeGroupDates[obj.route_group] || new Set()) : new Set();
+    const allDates = Object.keys(byDate).sort();
+    const sortedDates = [
+      ...allDates.filter(d => preferredDates.has(d)),
+      ...allDates.filter(d => !preferredDates.has(d)),
+    ];
+
     let pickedSlots = [];
 
-    // Prefer same day
-    for (const date of Object.keys(byDate).sort()) {
+    // Try to find all needed slots on the same day (preferred dates first)
+    for (const date of sortedDates) {
       if (pickedSlots.length >= needed) break;
-      const daySlots = byDate[date].filter(av => getRemaining(av.date, av.slot_index) > 0);
+      const daySlots = (byDate[date] || []).filter(av => getRemaining(av.date, av.slot_index) > 0);
       if (daySlots.length >= needed) {
         pickedSlots = daySlots.slice(0, needed);
         break;
       }
     }
 
-    // Fallback: spread across days
+    // Fallback: spread across days (still prefer route_group days first)
     if (pickedSlots.length < needed) {
       pickedSlots = [];
-      const sorted = available.sort((a, b) => {
+      const sorted = [...available].sort((a, b) => {
+        const aPreferred = preferredDates.has(a.date) ? 0 : 1;
+        const bPreferred = preferredDates.has(b.date) ? 0 : 1;
+        if (aPreferred !== bPreferred) return aPreferred - bPreferred;
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.slot_index - b.slot_index;
       });
@@ -100,15 +120,22 @@ async function runAutoSchedule(db) {
       continue;
     }
 
+    // Book the slots
     let devicesLeft = obj.device_count;
     for (const slot of pickedSlots) {
-      const devicesInSlot = Math.min(devicesLeft, SLOT_CAPACITY);
-      devicesLeft -= devicesInSlot;
+      const devicesInSlot = Math.min(devicesLeft > 0 ? devicesLeft : SLOT_CAPACITY, SLOT_CAPACITY);
+      if (devicesLeft > 0) devicesLeft -= devicesInSlot;
       useSlot(slot.date, slot.slot_index, devicesInSlot);
       await db.run(
         'INSERT OR REPLACE INTO bookings (object_id, date, slot_index, devices_in_slot) VALUES (?,?,?,?)',
         [obj.id, slot.date, slot.slot_index, devicesInSlot]
       );
+
+      // Register this date for the route group
+      if (obj.route_group) {
+        if (!routeGroupDates[obj.route_group]) routeGroupDates[obj.route_group] = new Set();
+        routeGroupDates[obj.route_group].add(slot.date);
+      }
     }
 
     assigned.push(obj.name);

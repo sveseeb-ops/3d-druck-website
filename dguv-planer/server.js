@@ -127,7 +127,7 @@ app.get('/api/objects', async (req, res) => {
       SELECT o.*, g.name AS group_name, g.kw_start, g.kw_end, g.year AS kw_year
       FROM objects o
       LEFT JOIN groups g ON o.group_id = g.id
-      ORDER BY o.name
+      ORDER BY COALESCE(o.route_group, 9999), o.name
     `);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -190,30 +190,56 @@ app.post('/api/upload-excel', requireAdmin, upload.single('file'), async (req, r
     };
 
     for (const row of data) {
-      // Column F: Objekt, G: Straße, I: Stadtteil, J: Gebäudetyp, Q: geprüfte Geräte
-      const name = String(
-        row['Objekt'] || row['Name'] || row['Adresse'] || ''
-      ).trim();
-      const street = String(row['Straße'] || row['Strasse'] || name).trim();
+      // F: Objekt, G: Straße, H: PLZ, I: Stadtteil, J: Gebäudetyp
+      // L: Letztes Prüfdatum, O: Prüfzyklus Jahre, Q: geprüfte Geräte
+      // R: Tage (Fenster-Bedarf), S: Gruppen (Wegeaufwand)
+      const name = String(row['Objekt'] || row['Name'] || row['Adresse'] || '').trim();
+      const street = String(row['Straße'] || row['Strasse'] || '').trim();
+      const plz = String(row['PLZ'] || '').trim();
       const stadtteil = String(row['Stadtteil'] || '').trim();
       const gebaeudetype = String(row['Gebäudetyp'] || row['Gebaeudetyp'] || row['Typ'] || '').trim();
+      const lastInspection = String(row['Letztes Prüfdatum'] || row['letztes Prüfdatum'] || '').trim();
+      const inspCycle = parseInt(row['Prüfzyklus Jahre'] || row['Prüfzyklu s Jahre'] || '') || null;
 
+      // "geprüfte Geräte" = actual device count
       const deviceRaw = row['geprüfte Geräte'] || row['geprufte Gerate'] || row['Geräte'] ||
                         row['Anzahl'] || row['Geräteanzahl'] || row['Anzahl Geräte'] || '';
       const devices = parseInt(deviceRaw);
 
-      if (!name || isNaN(devices) || devices <= 0) {
-        if (name) errors.push(`Übersprungen (keine Geräte): ${name}`);
+      // "Tage" = slot demand (0.125=1/8 day, 0.25=1 slot, 0.5=2 slots, 1.0=4 slots=full day)
+      const daysRaw = parseFloat(row['Tage'] || row['Gruppen Tagesanzahl'] || '');
+      const daysNeeded = isNaN(daysRaw) ? null : daysRaw;
+
+      // "Gruppen (Wegeaufwand)" = route group 1–9 for travel optimization
+      const routeGroupRaw = parseInt(row['Gruppen (Wegeaufwand)'] || row['Gruppen'] || '');
+      const routeGroup = isNaN(routeGroupRaw) ? null : routeGroupRaw;
+
+      if (!name) continue;
+      if ((isNaN(devices) || devices <= 0) && !daysNeeded) {
+        errors.push(`Übersprungen (keine Geräte/Tage): ${name}`);
         continue;
       }
 
       const fullName = stadtteil && !name.includes(stadtteil) ? `${name} (${stadtteil})` : name;
       const groupId = await ensureGroup(gebaeudetype || null);
 
-      await db.run(
-        'INSERT OR REPLACE INTO objects (name,street,device_count,group_id) VALUES (?,?,?,?)',
-        [fullName, street || fullName, devices, groupId]
-      );
+      await db.run(`
+        INSERT OR REPLACE INTO objects
+          (name, street, plz, stadtteil, device_count, days_needed, route_group,
+           group_id, last_inspection, inspection_cycle)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+      `, [
+        fullName,
+        street || fullName,
+        plz || null,
+        stadtteil || null,
+        isNaN(devices) ? 0 : devices,
+        daysNeeded,
+        routeGroup,
+        groupId,
+        lastInspection || null,
+        inspCycle,
+      ]);
       imported++;
     }
 

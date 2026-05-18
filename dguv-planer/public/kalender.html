@@ -116,10 +116,13 @@ async function init() {
   document.getElementById('headerObjectName').textContent = objectData.name;
   document.getElementById('pageTitle').textContent = objectData.name;
 
-  const slotsNeeded = Math.ceil(objectData.device_count / 75);
+  const slotsNeeded = objectData.days_needed
+    ? Math.max(1, Math.ceil(objectData.days_needed * 4))
+    : Math.ceil((objectData.device_count || 1) / 75);
+  const tageInfo = objectData.days_needed ? ` · ${objectData.days_needed} Tage` : '';
   document.getElementById('pageSub').textContent =
-    `${objectData.device_count} Geräte – bitte mindestens ${slotsNeeded} Zeitfenster als verfügbar markieren`;
-  document.getElementById('chipDevices').textContent = objectData.device_count;
+    `${objectData.device_count || '?'} Geräte${tageInfo} – bitte mindestens ${slotsNeeded} Zeitfenster als verfügbar markieren`;
+  document.getElementById('chipDevices').textContent = objectData.device_count || '?';
   document.getElementById('chipSlots').textContent = slotsNeeded;
 
   if (objectData.kw_start && objectData.kw_end) {
