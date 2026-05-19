@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd dguv-planer && npm install"
+
+[deploy]
+startCommand = "cd dguv-planer && node server.js"
+healthcheckPath = "/api/auth/status"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
